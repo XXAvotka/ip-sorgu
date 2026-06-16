@@ -1,0 +1,70 @@
+import requests
+import socket
+import json
+from datetime import datetime
+
+BANNER = r"""
+██╗  ██╗██╗  ██╗ █████╗ 
+╚██╗██╔╝╚██╗██╔╝██╔══██╗
+ ╚███╔╝  ╚███╔╝ ███████║
+ ██╔██╗  ██╔██╗ ██╔══██║
+██╔╝ ██╗██╔╝ ██╗██║  ██║
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+
+        XXA IP TOOL 
+"""
+
+print(BANNER)
+
+ip = input("IP (boş bırakırsan kendi IP): ").strip()
+
+# kendi IP
+if ip == "":
+    ip = requests.get("https://api.ipify.org").text
+
+def get_ip_api(ip):
+    url = f"http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city,lat,lon,isp,org,as,query"
+    return requests.get(url, timeout=10).json()
+
+def get_ipinfo(ip):
+    try:
+        return requests.get(f"https://ipinfo.io/{ip}/json", timeout=10).json()
+    except:
+        return {}
+
+def reverse_dns(ip):
+    try:
+        return socket.gethostbyaddr(ip)[0]
+    except:
+        return "Bulunamadı"
+
+try:
+    data = get_ip_api(ip)
+    extra = get_ipinfo(ip)
+
+    print("\n[XXA")
+    print("-" * 50)
+    print("IP:", ip)
+    print("Tarih:", datetime.now())
+
+    if data.get("status") == "success":
+        print("\n[LOCATION]")
+        print("Ülke:", data.get("country"))
+        print("Şehir:", data.get("city"))
+        print("Bölge:", data.get("regionName"))
+        print("Koordinat:", data.get("lat"), data.get("lon"))
+
+        print("\n[NETWORK]")
+        print("ISP:", data.get("isp"))
+        print("Org:", data.get("org"))
+        print("ASN:", data.get("as"))
+
+    print("\n[EXTRA INFO]")
+    print("Hostname:", extra.get("hostname", "Yok"))
+    print("Reverse DNS:", reverse_dns(ip))
+
+    print("\n[RAW JSON]")
+    print(json.dumps({**data, **extra}, indent=2))
+
+except Exception as e:
+    print("Hata:", e)
